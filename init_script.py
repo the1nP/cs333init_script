@@ -107,6 +107,51 @@ def clone_repository():
         log_message(f"Unexpected error while cloning repository: {str(e)}", logging.ERROR)
         return False
 
+def setup_background_service():
+    """Configure and start the Tooltrack web server as a background service"""
+    try:
+        service_file_path = "/etc/systemd/system/tooltrack.service"
+        service_content = """[Unit]
+Description=Tooltrack Web Server
+
+[Service]
+ExecStart=/srv/cs333_FinalProject/venv/bin/gunicorn app:app -w 4 -b 127.0.0.1:8000
+WorkingDirectory=/srv/cs333_FinalProject/
+Restart=on-failure
+User=ubuntu
+Group=ubuntu
+
+[Install]
+WantedBy=multi-user.target
+"""
+        
+        log_message("Creating systemd service file for Tooltrack")
+        # Write service content to a temporary file
+        with open("/tmp/tooltrack.service", "w") as temp_file:
+            temp_file.write(service_content)
+        
+        # Copy temporary file to systemd directory
+        subprocess.run(['sudo', 'cp', '/tmp/tooltrack.service', service_file_path], check=True)
+        
+        log_message("Reloading systemd daemon")
+        subprocess.run(['sudo', 'systemctl', 'daemon-reload'], check=True)
+        
+        log_message("Starting Tooltrack service")
+        subprocess.run(['sudo', 'systemctl', 'start', 'tooltrack'], check=True)
+        
+        # Enable service to start on boot
+        log_message("Enabling Tooltrack service to start on boot")
+        subprocess.run(['sudo', 'systemctl', 'enable', 'tooltrack'], check=True)
+        
+        log_message("Tooltrack service successfully set up and started")
+        log_message("Service status: sudo systemctl status tooltrack")
+        return True
+    except subprocess.CalledProcessError as e:
+        log_message(f"Failed to set up Tooltrack service: {str(e)}", logging.ERROR)
+        return False
+    except Exception as e:
+        log_message(f"Unexpected error while setting up Tooltrack service: {str(e)}", logging.ERROR)
+        return False
 if __name__ == "__main__":
     print("=" * 60)
     log_message("Starting initialization process for the web application")
@@ -130,4 +175,11 @@ if __name__ == "__main__":
         log_message("Failed to set up virtual environment. Exiting.", logging.ERROR)
         sys.exit(1)
     
+    # Configure and start the background service
+    service_success = setup_background_service()
+    if not service_success:
+        log_message("Failed to set up background service. Exiting.", logging.ERROR)
+        sys.exit(1)
+    
     log_message("Application setup completed successfully")
+    log_message("Tooltrack web server is now running as a background service")
