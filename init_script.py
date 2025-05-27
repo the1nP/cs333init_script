@@ -14,7 +14,39 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout)
     ]
 )
-
+def setup_virtual_environment():
+    """Create and activate virtual environment, then install requirements."""
+    try:
+        target_dir = "/srv/cs333_FinalProject"
+        
+        # Navigate to project directory
+        log_message(f"Changing to project directory: {target_dir}")
+        os.chdir(target_dir)
+        
+        # Create virtual environment
+        log_message("Creating Python virtual environment")
+        subprocess.run(['python3', '-m', 'venv', 'venv'], check=True)
+        
+        # Install requirements if requirements.txt exists
+        if os.path.exists('requirements.txt'):
+            log_message("Installing project dependencies from requirements.txt")
+            # Use the venv's pip directly rather than activating the environment
+            subprocess.run(['./venv/bin/pip', 'install', '-r', 'requirements.txt'], check=True)
+            log_message("Project dependencies installed successfully")
+        else:
+            log_message("No requirements.txt found, skipping dependency installation", logging.WARNING)
+        
+        # Create activation instructions
+        log_message("Virtual environment setup complete")
+        log_message("To activate the environment, run: source /srv/cs333_FinalProject/venv/bin/activate")
+        
+        return True
+    except subprocess.CalledProcessError as e:
+        log_message(f"Failed to setup virtual environment: {str(e)}", logging.ERROR)
+        return False
+    except Exception as e:
+        log_message(f"Unexpected error while setting up virtual environment: {str(e)}", logging.ERROR)
+        return False
 def log_message(message, level=logging.INFO):
     """Log message to file and console"""
     if level == logging.INFO:
@@ -86,9 +118,16 @@ if __name__ == "__main__":
         log_message("Failed to install prerequisites. Exiting.", logging.ERROR)
         sys.exit(1)
         
-    success = clone_repository()
+    # Clone the repository
+    clone_success = clone_repository()
+    if not clone_success:
+        log_message("Failed to clone repository. Exiting.", logging.ERROR)
+        sys.exit(1)
     
-    if success:
-        log_message("Repository setup completed successfully")
-    else:
-        log_message("Repository setup failed, check logs for details", logging.ERROR)
+    # Set up the virtual environment and install requirements
+    venv_success = setup_virtual_environment()
+    if not venv_success:
+        log_message("Failed to set up virtual environment. Exiting.", logging.ERROR)
+        sys.exit(1)
+    
+    log_message("Application setup completed successfully")
