@@ -107,6 +107,73 @@ def clone_repository():
         log_message(f"Unexpected error while cloning repository: {str(e)}", logging.ERROR)
         return False
 
+def setup_apache_reverse_proxy():
+    """Configure Apache2 as a reverse proxy for the Tooltrack application"""
+    try:
+        # Define domain name at the beginning of the function
+        domain_name = "2tooltrack.m3chok.com"
+        app_port = 8000
+        
+        log_message("Installing Apache2 server")
+        subprocess.run(['sudo', 'apt', 'install', '-y', 'apache2'], check=True)
+        
+        log_message("Stopping Tooltrack service temporarily")
+        subprocess.run(['sudo', 'systemctl', 'stop', 'tooltrack'], check=True)
+        
+        # Create virtual host configuration using the domain_name variable
+        vhost_content = f"""<VirtualHost *:80>
+        ServerName {domain_name}
+        ServerAlias www.{domain_name}
+
+        ProxyPass / http://127.0.0.1:{app_port}/
+        ProxyPassReverse / http://127.0.0.1:{app_port}/
+
+</VirtualHost>
+
+# vim: syntax=apache ts=4 sw=4 sts=4 sr noet
+"""
+        apache_conf_dir = "/etc/apache2/sites-available"
+        vhost_file = f"{apache_conf_dir}/{domain_name}.conf"
+        
+        log_message(f"Configuring Apache2 virtual host for {domain_name}")
+        
+        # First remove the default SSL configuration if it exists
+        subprocess.run(['sudo', 'rm', '-f', f"{apache_conf_dir}/default-ssl.conf"], check=True)
+        
+        # Rename the default configuration
+        if os.path.exists(f"{apache_conf_dir}/000-default.conf"):
+            log_message("Removing default Apache2 configuration")
+            subprocess.run(['sudo', 'mv', f"{apache_conf_dir}/000-default.conf", 
+                           vhost_file], check=True)
+        
+        # Write our new configuration - use domain_name for the temp file name too
+        with open(f"/tmp/{domain_name}.conf", "w") as temp_file:
+            temp_file.write(vhost_content)
+            
+        subprocess.run(['sudo', 'cp', f'/tmp/{domain_name}.conf', vhost_file], check=True)
+        
+        log_message("Enabling required Apache2 modules")
+        subprocess.run(['sudo', 'a2enmod', 'proxy', 'proxy_http'], check=True)
+        
+        log_message("Disabling default site and enabling Tooltrack site")
+        subprocess.run(['sudo', 'a2dissite', '000-default.conf'], check=True, stderr=subprocess.DEVNULL)
+        subprocess.run(['sudo', 'a2ensite', f'{domain_name}.conf'], check=True)
+        
+        log_message("Reloading Apache2 configuration")
+        subprocess.run(['sudo', 'systemctl', 'reload', 'apache2'], check=True)
+        
+        log_message("Restarting Tooltrack service")
+        subprocess.run(['sudo', 'systemctl', 'start', 'tooltrack'], check=True)
+        
+        log_message("Apache2 reverse proxy setup complete")
+        log_message(f"Tooltrack is now accessible at http://{domain_name}")
+        return True
+    except subprocess.CalledProcessError as e:
+        log_message(f"Failed to set up Apache2 reverse proxy: {str(e)}", logging.ERROR)
+        return False
+    except Exception as e:
+        log_message(f"Unexpected error while setting up Apache2 reverse proxy: {str(e)}", logging.ERROR)
+        return False
 def setup_background_service():
     """Configure and start the Tooltrack web server as a background service"""
     try:
@@ -181,5 +248,12 @@ if __name__ == "__main__":
         log_message("Failed to set up background service. Exiting.", logging.ERROR)
         sys.exit(1)
     
+    # Set up Apache2 as a reverse proxy
+    apache_success = setup_apache_reverse_proxy()
+    if not apache_success:
+        log_message("Failed to set up Apache2 reverse proxy. Exiting.", logging.ERROR)
+        sys.exit(1)
+    # Use the same domain name as in the setup_apache_reverse_proxy function
+    domain_name = "2tooltrack.m3chok.com"  # This should match the one in setup_apache_reverse_proxy
     log_message("Application setup completed successfully")
-    log_message("Tooltrack web server is now running as a background service")
+    log_message(f"Tooltrack web server is now running and accessible at http://{domain_name}")
