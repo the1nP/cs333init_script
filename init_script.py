@@ -156,7 +156,11 @@ def setup_apache_reverse_proxy():
         subprocess.run(['sudo', 'a2enmod', 'proxy', 'proxy_http'], check=True)
         
         log_message("Disabling default site and enabling Tooltrack site")
-        subprocess.run(['sudo', 'a2dissite', '000-default.conf'], check=True, stderr=subprocess.DEVNULL)
+        try:
+            # Try to disable the default site, but continue if it doesn't exist
+            subprocess.run(['sudo', 'a2dissite', '000-default.conf'], check=True, stderr=subprocess.PIPE)
+        except subprocess.CalledProcessError as e:
+            log_message("Default site 000-default.conf does not exist, continuing anyway", logging.WARNING)        
         subprocess.run(['sudo', 'a2ensite', f'{domain_name}.conf'], check=True)
         
         log_message("Reloading Apache2 configuration")
@@ -219,6 +223,58 @@ WantedBy=multi-user.target
     except Exception as e:
         log_message(f"Unexpected error while setting up Tooltrack service: {str(e)}", logging.ERROR)
         return False
+def setup_ssl_certificates():
+    """Install Certbot and configure SSL certificates for the domain"""
+    try:
+        # Get domain name from apache setup to be consistent
+        domain_name = "2tooltrack.m3chok.com"
+        
+        log_message("Installing Certbot via snap")
+        subprocess.run(['sudo', 'snap', 'install', '--classic', 'certbot'], check=True)
+        
+        log_message("Creating symlink for certbot")
+        subprocess.run(['sudo', 'ln', '-sf', '/snap/bin/certbot', '/usr/bin/certbot'], check=True)
+        
+        log_message("Obtaining SSL certificates with Certbot")
+        
+        # Create expect script to handle interactive prompts
+        expect_script = """#!/usr/bin/expect
+set timeout 300
+spawn sudo certbot --apache
+expect "Enter email address"
+send "the1name@outlook.com\\r"
+expect "the Terms of Service"
+send "Y\\r"
+expect "share your email"
+send "N\\r"
+expect "Select the appropriate number"
+send "\\r"
+expect eof
+"""
+        
+        with open("/tmp/certbot_expect.exp", "w") as f:
+            f.write(expect_script)
+        
+        # Make the expect script executable
+        subprocess.run(['chmod', '+x', '/tmp/certbot_expect.exp'], check=True)
+        
+        # Install expect if not already installed
+        subprocess.run(['sudo', 'apt', 'install', '-y', 'expect'], check=True)
+        
+        # Run the expect script
+        log_message("Running Certbot to obtain SSL certificates")
+        subprocess.run(['/tmp/certbot_expect.exp'], check=True, stderr=subprocess.DEVNULL)
+        
+        log_message("SSL certificates successfully obtained and configured")
+        log_message(f"Website is now accessible via HTTPS: https://{domain_name}")
+        return True
+        
+    except subprocess.CalledProcessError as e:
+        log_message(f"Failed to set up SSL certificates: {str(e)}", logging.ERROR)
+        return False
+    except Exception as e:
+        log_message(f"Unexpected error while setting up SSL certificates: {str(e)}", logging.ERROR)
+        return False
 if __name__ == "__main__":
     print("=" * 60)
     log_message("Starting initialization process for the web application")
@@ -257,3 +313,14 @@ if __name__ == "__main__":
     domain_name = "2tooltrack.m3chok.com"  # This should match the one in setup_apache_reverse_proxy
     log_message("Application setup completed successfully")
     log_message(f"Tooltrack web server is now running and accessible at http://{domain_name}")
+
+     # Set up SSL certificates with Certbot
+    ssl_success = setup_ssl_certificates()
+    if not ssl_success:
+        log_message("Failed to set up SSL certificates. Exiting.", logging.ERROR)
+        sys.exit(1)
+    
+    # Use the same domain name as in the setup_apache_reverse_proxy function
+    domain_name = "2tooltrack.m3chok.com"  # This should match the one in setup_apache_reverse_proxy
+    log_message("Application setup completed successfully")
+    log_message(f"Tooltrack web server is now running and accessible at https://{domain_name}")
