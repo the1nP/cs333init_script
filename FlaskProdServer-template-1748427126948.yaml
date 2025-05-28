@@ -1,0 +1,997 @@
+---
+Metadata:
+  AWSToolsMetrics:
+    IaC_Generator: "arn:aws:cloudformation:us-east-1:339713116745:generatedTemplate/8f47eccf-8bd6-411d-9b6c-33c927ab2d15"
+Resources:
+  EC2SecurityGroupSm:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SecurityGroup"
+    DeletionPolicy: "Retain"
+    Properties:
+      GroupDescription: "default VPC security group"
+      GroupName: "default"
+      VpcId:
+        Ref: "EC2VPC"
+      SecurityGroupIngress:
+      - IpProtocol: "-1"
+        FromPort: -1
+        SourceSecurityGroupId:
+          Fn::GetAtt:
+          - "EC2VPC"
+          - "DefaultSecurityGroup"
+        ToPort: -1
+        SourceSecurityGroupOwnerId: "339713116745"
+      SecurityGroupEgress:
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "-1"
+        FromPort: -1
+        ToPort: -1
+  EC2VolumeLf:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Volume"
+    DeletionPolicy: "Retain"
+    Properties:
+      MultiAttachEnabled: false
+      SnapshotId: "snap-019b84b546bce886f"
+      VolumeType: "gp2"
+      Encrypted: false
+      Size: 8
+      AutoEnableIO: true
+      AvailabilityZone: "us-east-1d"
+      Iops: 100
+      Tags: []
+  EC2SubnetNetworkAclAssociation:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    DeletionPolicy: "Retain"
+    Properties:
+      NetworkAclId:
+        Ref: "EC2NetworkAcl"
+      SubnetId:
+        Ref: "EC2Subnet"
+  EC2SubnetBm:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Subnet"
+    DeletionPolicy: "Retain"
+    Properties:
+      VpcId:
+        Ref: "EC2VPC"
+      MapPublicIpOnLaunch: true
+      EnableDns64: false
+      AvailabilityZoneId: "use1-az1"
+      PrivateDnsNameOptionsOnLaunch:
+        EnableResourceNameDnsARecord: false
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      CidrBlock: "172.31.0.0/20"
+      Ipv6Native: false
+      Tags: []
+  EC2SubnetNetworkAclAssociationCY:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    DeletionPolicy: "Retain"
+    Properties:
+      NetworkAclId:
+        Ref: "EC2NetworkAcl"
+      SubnetId:
+        Ref: "EC2SubnetLw"
+  EC2NetworkInterfaceAttachmentBQ:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::NetworkInterfaceAttachment"
+    DeletionPolicy: "Retain"
+    Properties:
+      NetworkInterfaceId: "eni-0c88e21f23c785437"
+      InstanceId: "i-076dd263ecc96a716"
+      DeviceIndex: "0"
+      DeleteOnTermination: true
+  EC2VolumeAttachmentEs:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::VolumeAttachment"
+    DeletionPolicy: "Retain"
+    Properties:
+      InstanceId: "i-0ce602674bcc9d0a5"
+      VolumeId: "vol-082abba760b71f5c5"
+      Device: "/dev/sda1"
+  EC2SubnetKN:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Subnet"
+    DeletionPolicy: "Retain"
+    Properties:
+      VpcId:
+        Ref: "EC2VPC"
+      MapPublicIpOnLaunch: true
+      EnableDns64: false
+      AvailabilityZoneId: "use1-az5"
+      PrivateDnsNameOptionsOnLaunch:
+        EnableResourceNameDnsARecord: false
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      CidrBlock: "172.31.64.0/20"
+      Ipv6Native: false
+      Tags: []
+  EC2RouteG4:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Route"
+    DeletionPolicy: "Retain"
+    Properties:
+      RouteTableId:
+        Ref: "EC2RouteTable"
+      DestinationCidrBlock:
+        Fn::GetAtt:
+        - "EC2VPC"
+        - "CidrBlock"
+      GatewayId: "local"
+      VpcEndpointId: "local"
+  EC2Instance:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Instance"
+    DeletionPolicy: "Retain"
+    Properties:
+      Tenancy: "default"
+      SecurityGroups:
+      - "FlaskProdBastionHost"
+      PrivateIpAddress: "172.31.93.107"
+      UserData: "IyEvYmluL2Jhc2gKIyBVcGRhdGUgcGFja2FnZSBsaXN0IGFuZCB1cGdyYWRlIHBhY2thZ2VzCnN1ZG8gYXB0IHVwZGF0ZSAteQpzdWRvIGFwdCB1cGdyYWRlIC15CgojIENsb25lIEluaXQgR2l0IHJlcG9zaXRvcnkKZ2l0IGNsb25lIGh0dHBzOi8vZ2l0aHViLmNvbS9wYWtpbjY1MDk2ODExODIvY3MzMzNpbml0X3NjcmlwdC5naXQgL2hvbWUvdWJ1bnR1L2NzMzMzaW5pdF9zY3JpcHQKCiMgQ2hhbmdlIHRvIHRoZSByZXBvIGRpcmVjdG9yeQpjZCAvaG9tZS91YnVudHUvY3MzMzNpbml0X3NjcmlwdAoKIyBSdW4gdGhlIFB5dGhvbiBzY3JpcHQKc3VkbyBweXRob24zIGluaXRfc2NyaXB0LnB5Cg=="
+      BlockDeviceMappings:
+      - Ebs:
+          SnapshotId: "snap-0706476dde26d8e82"
+          VolumeType: "gp2"
+          Iops: 100
+          VolumeSize: 8
+          Encrypted: false
+          DeleteOnTermination: true
+        DeviceName: "/dev/sda1"
+      SubnetId:
+        Ref: "EC2SubnetQD"
+      EbsOptimized: false
+      Volumes:
+      - VolumeId: "vol-0fbad83a6e6102bf1"
+        Device: "/dev/sda1"
+      NetworkInterfaces:
+      - PrivateIpAddresses:
+        - PrivateIpAddress: "172.31.93.107"
+          Primary: true
+        SecondaryPrivateIpAddressCount: 0
+        DeviceIndex: "0"
+        GroupSet:
+        - Ref: "EC2SecurityGroupAB"
+        Ipv6Addresses: []
+        SubnetId:
+          Ref: "EC2SubnetQD"
+        AssociatePublicIpAddress: true
+        NetworkInterfaceId:
+          Ref: "EC2NetworkInterfaceQT"
+        DeleteOnTermination: true
+      ImageId: "ami-0f9de6e2d2f067fca"
+      InstanceType: "t2.medium"
+      Monitoring: false
+      Tags:
+      - Value: "FlaskProductionServer"
+        Key: "Name"
+      InstanceInitiatedShutdownBehavior: "stop"
+      CpuOptions:
+        ThreadsPerCore: 1
+        CoreCount: 2
+      AvailabilityZone: "us-east-1b"
+      PrivateDnsNameOptions:
+        EnableResourceNameDnsARecord: true
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      SecurityGroupIds:
+      - "sg-0883ea3d53c0f03ec"
+      DisableApiTermination: false
+      KeyName: "vockey"
+      SourceDestCheck: true
+      PlacementGroupName: ""
+      VpcId: "vpc-0a1e6b2ea5bc4ee92"
+      State:
+        Code: "16"
+        Name: "running"
+      CreditSpecification:
+        CPUCredits: "standard"
+  EC2NetworkInterfaceSX:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::NetworkInterface"
+    DeletionPolicy: "Retain"
+    Properties:
+      Description: ""
+      PrivateIpAddress: "172.31.32.243"
+      PrivateIpAddresses:
+      - PrivateIpAddress: "172.31.32.243"
+        Primary: true
+      SecondaryPrivateIpAddressCount: 0
+      Ipv6PrefixCount: 0
+      Ipv4Prefixes: []
+      Ipv4PrefixCount: 0
+      GroupSet:
+      - "sg-0c2e93c0e2806f6a3"
+      Ipv6Prefixes: []
+      SubnetId:
+        Ref: "EC2SubnetDv"
+      SourceDestCheck: true
+      InterfaceType: "interface"
+      Tags: []
+      PublicIpDnsNameOptions:
+        DnsHostnameType: "public-ipv4-dns-name"
+        PublicIpv4DnsName: "ec2-3-211-39-99.compute-1.amazonaws.com"
+  EC2NetworkInterfaceAttachmentQO:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::NetworkInterfaceAttachment"
+    DeletionPolicy: "Retain"
+    Properties:
+      NetworkInterfaceId: "eni-06ccbbb86c0d5c2f1"
+      InstanceId: "i-0e0b5a2df663438f3"
+      DeviceIndex: "0"
+      DeleteOnTermination: true
+  EC2NetworkInterfaceAttachmentDi:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::NetworkInterfaceAttachment"
+    DeletionPolicy: "Retain"
+    Properties:
+      NetworkInterfaceId: "eni-08040476dbfe46a7d"
+      InstanceId: "i-0ce602674bcc9d0a5"
+      DeviceIndex: "0"
+      DeleteOnTermination: true
+  EC2DHCPOptions:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::DHCPOptions"
+    DeletionPolicy: "Retain"
+    Properties:
+      DomainName: "ec2.internal"
+      DomainNameServers:
+      - "AmazonProvidedDNS"
+      Tags: []
+  EC2VolumeXU:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Volume"
+    DeletionPolicy: "Retain"
+    Properties:
+      MultiAttachEnabled: false
+      SnapshotId: "snap-0706476dde26d8e82"
+      VolumeType: "gp2"
+      Encrypted: false
+      Size: 8
+      AutoEnableIO: true
+      AvailabilityZone: "us-east-1b"
+      Iops: 100
+      Tags: []
+  EC2SecurityGroupFc:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SecurityGroup"
+    DeletionPolicy: "Retain"
+    Properties:
+      GroupDescription: "launch-wizard-1 created 2025-04-22T03:27:59.397Z"
+      GroupName: "launch-wizard-1"
+      VpcId:
+        Ref: "EC2VPC"
+      SecurityGroupIngress:
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "tcp"
+        FromPort: 80
+        ToPort: 80
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "tcp"
+        FromPort: 2000
+        ToPort: 2000
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "tcp"
+        FromPort: 22
+        ToPort: 22
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "tcp"
+        FromPort: 5000
+        ToPort: 5000
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "tcp"
+        FromPort: 19999
+        ToPort: 19999
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "tcp"
+        FromPort: 443
+        ToPort: 443
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "tcp"
+        FromPort: 2004
+        ToPort: 2004
+      SecurityGroupEgress:
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "-1"
+        FromPort: -1
+        ToPort: -1
+      Tags:
+      - Value: "DevelopEnvironment"
+        Key: "Name"
+  EC2Route:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Route"
+    DeletionPolicy: "Retain"
+    Properties:
+      RouteTableId:
+        Ref: "EC2RouteTable"
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId:
+        Ref: "EC2InternetGateway"
+      VpcEndpointId: "igw-003e51d1f36281a79"
+  SecretsManagerSecret:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::SecretsManager::Secret"
+    DeletionPolicy: "Retain"
+    Properties:
+      ReplicaRegions: []
+      Description: "Configuration for Equipment Rental Application"
+      Tags: []
+      Name: "equipment-app/config"
+  EC2SubnetDv:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Subnet"
+    DeletionPolicy: "Retain"
+    Properties:
+      VpcId:
+        Ref: "EC2VPC"
+      MapPublicIpOnLaunch: true
+      EnableDns64: false
+      AvailabilityZoneId: "use1-az6"
+      PrivateDnsNameOptionsOnLaunch:
+        EnableResourceNameDnsARecord: false
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      CidrBlock: "172.31.32.0/20"
+      Ipv6Native: false
+      Tags: []
+  EC2NetworkInterfaceAttachment:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::NetworkInterfaceAttachment"
+    DeletionPolicy: "Retain"
+    Properties:
+      NetworkInterfaceId: "eni-02fc363a2ae9e6c42"
+      InstanceId: "i-09e546c946266063c"
+      DeviceIndex: "0"
+      DeleteOnTermination: true
+  DynamoDBTableEquipment:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::DynamoDB::Table"
+    DeletionPolicy: "Retain"
+    Properties:
+      SSESpecification:
+        SSEEnabled: false
+      TableName: "Equipment"
+      AttributeDefinitions:
+      - AttributeType: "S"
+        AttributeName: "EquipmentID"
+      ContributorInsightsSpecification:
+        Enabled: false
+      BillingMode: "PAY_PER_REQUEST"
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+      WarmThroughput:
+        ReadUnitsPerSecond: 12000
+        WriteUnitsPerSecond: 4000
+      KeySchema:
+      - KeyType: "HASH"
+        AttributeName: "EquipmentID"
+      DeletionProtectionEnabled: false
+      TableClass: "STANDARD"
+      Tags: []
+      TimeToLiveSpecification:
+        Enabled: false
+  EC2VPCDHCPOptionsAssociation:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::VPCDHCPOptionsAssociation"
+    DeletionPolicy: "Retain"
+    Properties:
+      VpcId:
+        Ref: "EC2VPC"
+      DhcpOptionsId:
+        Ref: "EC2DHCPOptions"
+  EC2VolumeGo:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Volume"
+    DeletionPolicy: "Retain"
+    Properties:
+      MultiAttachEnabled: false
+      SnapshotId: "snap-0706476dde26d8e82"
+      VolumeType: "gp2"
+      Encrypted: false
+      Size: 8
+      AutoEnableIO: true
+      AvailabilityZone: "us-east-1c"
+      Iops: 100
+      Tags: []
+  EC2SubnetNetworkAclAssociationMH:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    DeletionPolicy: "Retain"
+    Properties:
+      NetworkAclId:
+        Ref: "EC2NetworkAcl"
+      SubnetId:
+        Ref: "EC2SubnetBm"
+  S3BucketTooltrackprofilepic:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::S3::Bucket"
+    DeletionPolicy: "Retain"
+    Properties:
+      PublicAccessBlockConfiguration:
+        RestrictPublicBuckets: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        BlockPublicAcls: true
+      BucketName: "tooltrack-profilepic"
+      OwnershipControls:
+        Rules:
+        - ObjectOwnership: "BucketOwnerEnforced"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - BucketKeyEnabled: true
+          ServerSideEncryptionByDefault:
+            SSEAlgorithm: "AES256"
+  EC2NetworkInterface:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::NetworkInterface"
+    DeletionPolicy: "Retain"
+    Properties:
+      Description: ""
+      PrivateIpAddress: "172.31.22.198"
+      PrivateIpAddresses:
+      - PrivateIpAddress: "172.31.22.198"
+        Primary: true
+      SecondaryPrivateIpAddressCount: 0
+      Ipv6PrefixCount: 0
+      Ipv4Prefixes: []
+      Ipv4PrefixCount: 0
+      GroupSet:
+      - "sg-0c2e93c0e2806f6a3"
+      Ipv6Prefixes: []
+      SubnetId:
+        Ref: "EC2Subnet"
+      SourceDestCheck: true
+      InterfaceType: "interface"
+      Tags: []
+      PublicIpDnsNameOptions:
+        DnsHostnameType: "public-ipv4-dns-name"
+        PublicIpv4DnsName: "ec2-52-73-96-197.compute-1.amazonaws.com"
+  EC2InternetGateway:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::InternetGateway"
+    DeletionPolicy: "Retain"
+    Properties:
+      Tags: []
+  EC2SecurityGroupFt:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SecurityGroup"
+    DeletionPolicy: "Retain"
+    Properties:
+      GroupDescription: "For Bastion Host"
+      GroupName: "Bastion Host"
+      VpcId:
+        Ref: "EC2VPC"
+      SecurityGroupIngress:
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "tcp"
+        FromPort: 22
+        ToPort: 22
+      SecurityGroupEgress:
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "-1"
+        FromPort: -1
+        ToPort: -1
+      Tags:
+      - Value: "BastionHost"
+        Key: "Name"
+  EC2NetworkAcl:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::NetworkAcl"
+    DeletionPolicy: "Retain"
+    Properties:
+      VpcId:
+        Ref: "EC2VPC"
+      Tags: []
+  EC2SubnetNetworkAclAssociationBJ:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    DeletionPolicy: "Retain"
+    Properties:
+      NetworkAclId:
+        Ref: "EC2NetworkAcl"
+      SubnetId:
+        Ref: "EC2SubnetKN"
+  S3StorageLens:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::S3::StorageLens"
+    DeletionPolicy: "Retain"
+    Properties:
+      StorageLensConfiguration:
+        AccountLevel:
+          BucketLevel: {}
+        IsEnabled: true
+        Id: "default-account-dashboard"
+      Tags: []
+  EC2Subnet:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Subnet"
+    DeletionPolicy: "Retain"
+    Properties:
+      VpcId:
+        Ref: "EC2VPC"
+      MapPublicIpOnLaunch: true
+      EnableDns64: false
+      AvailabilityZoneId: "use1-az4"
+      PrivateDnsNameOptionsOnLaunch:
+        EnableResourceNameDnsARecord: false
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      CidrBlock: "172.31.16.0/20"
+      Ipv6Native: false
+      Tags: []
+  EC2SecurityGroup:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SecurityGroup"
+    DeletionPolicy: "Retain"
+    Properties:
+      GroupDescription: "Alloe Traffic to FlaskProdServer"
+      GroupName: "FlaskProd"
+      VpcId:
+        Ref: "EC2VPC"
+      SecurityGroupIngress:
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "tcp"
+        FromPort: 80
+        ToPort: 80
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "tcp"
+        FromPort: 22
+        ToPort: 22
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "tcp"
+        FromPort: 443
+        ToPort: 443
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "tcp"
+        Description: "For test"
+        FromPort: 2004
+        ToPort: 2004
+      SecurityGroupEgress:
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "-1"
+        FromPort: -1
+        ToPort: -1
+      Tags:
+      - Value: "ProductionEnvi (Open SSH)"
+        Key: "Name"
+  EC2SubnetQD:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Subnet"
+    DeletionPolicy: "Retain"
+    Properties:
+      VpcId:
+        Ref: "EC2VPC"
+      MapPublicIpOnLaunch: true
+      EnableDns64: false
+      AvailabilityZoneId: "use1-az2"
+      PrivateDnsNameOptionsOnLaunch:
+        EnableResourceNameDnsARecord: false
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      CidrBlock: "172.31.80.0/20"
+      Ipv6Native: false
+      Tags: []
+  EC2VolumeAttachmentSd:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::VolumeAttachment"
+    DeletionPolicy: "Retain"
+    Properties:
+      InstanceId: "i-076dd263ecc96a716"
+      VolumeId: "vol-0fbad83a6e6102bf1"
+      Device: "/dev/sda1"
+  EC2InstanceY2:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Instance"
+    DeletionPolicy: "Retain"
+    Properties:
+      Tenancy: "default"
+      SecurityGroups:
+      - "Bastion Host"
+      PrivateIpAddress: "172.31.32.207"
+      InstanceInitiatedShutdownBehavior: "stop"
+      CpuOptions:
+        ThreadsPerCore: 2
+        CoreCount: 1
+      BlockDeviceMappings:
+      - Ebs:
+          SnapshotId: "snap-0706476dde26d8e82"
+          VolumeType: "gp2"
+          Iops: 100
+          VolumeSize: 8
+          Encrypted: false
+          DeleteOnTermination: true
+        DeviceName: "/dev/sda1"
+      AvailabilityZone: "us-east-1d"
+      PrivateDnsNameOptions:
+        EnableResourceNameDnsARecord: true
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      SubnetId:
+        Ref: "EC2SubnetDv"
+      SecurityGroupIds:
+      - "sg-0bef900fb25f2dadb"
+      EbsOptimized: true
+      DisableApiTermination: false
+      KeyName: "vockey"
+      SourceDestCheck: true
+      Volumes:
+      - VolumeId: "vol-082abba760b71f5c5"
+        Device: "/dev/sda1"
+      PlacementGroupName: ""
+      VpcId: "vpc-0a1e6b2ea5bc4ee92"
+      State:
+        Code: "16"
+        Name: "running"
+      NetworkInterfaces:
+      - PrivateIpAddresses:
+        - PrivateIpAddress: "172.31.32.207"
+          Primary: true
+        SecondaryPrivateIpAddressCount: 0
+        DeviceIndex: "0"
+        GroupSet:
+        - Ref: "EC2SecurityGroupFt"
+        Ipv6Addresses: []
+        SubnetId:
+          Ref: "EC2SubnetDv"
+        AssociatePublicIpAddress: true
+        NetworkInterfaceId:
+          Ref: "EC2NetworkInterfaceAj"
+        DeleteOnTermination: true
+      ImageId: "ami-0f9de6e2d2f067fca"
+      InstanceType: "t3.small"
+      Monitoring: false
+      Tags:
+      - Value: "BastionHostFlaskServer"
+        Key: "Name"
+      CreditSpecification:
+        CPUCredits: "unlimited"
+  EC2NetworkInterfaceAj:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::NetworkInterface"
+    DeletionPolicy: "Retain"
+    Properties:
+      Description: ""
+      PrivateIpAddress: "172.31.32.207"
+      PrivateIpAddresses:
+      - PrivateIpAddress: "172.31.32.207"
+        Primary: true
+      SecondaryPrivateIpAddressCount: 0
+      Ipv6PrefixCount: 0
+      Ipv4Prefixes: []
+      Ipv4PrefixCount: 0
+      GroupSet:
+      - "sg-0bef900fb25f2dadb"
+      Ipv6Prefixes: []
+      SubnetId:
+        Ref: "EC2SubnetDv"
+      SourceDestCheck: true
+      InterfaceType: "interface"
+      Tags: []
+      PublicIpDnsNameOptions:
+        DnsHostnameType: "public-ipv4-dns-name"
+        PublicIpv4DnsName: "ec2-44-223-173-119.compute-1.amazonaws.com"
+  EC2SubnetLw:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Subnet"
+    DeletionPolicy: "Retain"
+    Properties:
+      VpcId:
+        Ref: "EC2VPC"
+      MapPublicIpOnLaunch: true
+      EnableDns64: false
+      AvailabilityZoneId: "use1-az3"
+      PrivateDnsNameOptionsOnLaunch:
+        EnableResourceNameDnsARecord: false
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      CidrBlock: "172.31.48.0/20"
+      Ipv6Native: false
+      Tags: []
+  EC2VolumeAttachment:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::VolumeAttachment"
+    DeletionPolicy: "Retain"
+    Properties:
+      InstanceId: "i-0e0b5a2df663438f3"
+      VolumeId: "vol-04d8edd0e57d1402a"
+      Device: "/dev/sda1"
+  EC2VolumeSa:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Volume"
+    DeletionPolicy: "Retain"
+    Properties:
+      MultiAttachEnabled: false
+      SnapshotId: "snap-0706476dde26d8e82"
+      VolumeType: "gp2"
+      Encrypted: false
+      Size: 8
+      AutoEnableIO: true
+      AvailabilityZone: "us-east-1d"
+      Iops: 100
+      Tags: []
+  EC2VolumeAttachmentCi:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::VolumeAttachment"
+    DeletionPolicy: "Retain"
+    Properties:
+      InstanceId: "i-09e546c946266063c"
+      VolumeId: "vol-070fb9a533f359c8f"
+      Device: "/dev/sda1"
+  EC2NetworkInterfaceQT:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::NetworkInterface"
+    DeletionPolicy: "Retain"
+    Properties:
+      Description: ""
+      PrivateIpAddress: "172.31.93.107"
+      PrivateIpAddresses:
+      - PrivateIpAddress: "172.31.93.107"
+        Primary: true
+      SecondaryPrivateIpAddressCount: 0
+      Ipv6PrefixCount: 0
+      Ipv4Prefixes: []
+      Ipv4PrefixCount: 0
+      GroupSet:
+      - "sg-0883ea3d53c0f03ec"
+      Ipv6Prefixes: []
+      SubnetId:
+        Ref: "EC2SubnetQD"
+      SourceDestCheck: true
+      InterfaceType: "interface"
+      Tags: []
+      PublicIpDnsNameOptions:
+        DnsHostnameType: "public-ipv4-dns-name"
+        PublicIpv4DnsName: "ec2-34-227-186-161.compute-1.amazonaws.com"
+  EC2Volume:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Volume"
+    DeletionPolicy: "Retain"
+    Properties:
+      MultiAttachEnabled: false
+      SnapshotId: "snap-0706476dde26d8e82"
+      VolumeType: "gp2"
+      Encrypted: false
+      Size: 8
+      AutoEnableIO: true
+      AvailabilityZone: "us-east-1d"
+      Iops: 100
+      Tags: []
+  EC2SubnetNetworkAclAssociationFd:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    DeletionPolicy: "Retain"
+    Properties:
+      NetworkAclId:
+        Ref: "EC2NetworkAcl"
+      SubnetId:
+        Ref: "EC2SubnetQD"
+  EC2InstanceUQ:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Instance"
+    DeletionPolicy: "Retain"
+    Properties:
+      Tenancy: "default"
+      SecurityGroups:
+      - "launch-wizard-1"
+      PrivateIpAddress: "172.31.22.198"
+      InstanceInitiatedShutdownBehavior: "stop"
+      CpuOptions:
+        ThreadsPerCore: 1
+        CoreCount: 2
+      BlockDeviceMappings:
+      - Ebs:
+          SnapshotId: "snap-0706476dde26d8e82"
+          VolumeType: "gp2"
+          Iops: 100
+          VolumeSize: 8
+          Encrypted: false
+          DeleteOnTermination: true
+        DeviceName: "/dev/sda1"
+      AvailabilityZone: "us-east-1c"
+      PrivateDnsNameOptions:
+        EnableResourceNameDnsARecord: true
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      SubnetId:
+        Ref: "EC2Subnet"
+      SecurityGroupIds:
+      - "sg-0c2e93c0e2806f6a3"
+      EbsOptimized: false
+      DisableApiTermination: false
+      KeyName: "vockey"
+      SourceDestCheck: true
+      Volumes:
+      - VolumeId: "vol-070fb9a533f359c8f"
+        Device: "/dev/sda1"
+      PlacementGroupName: ""
+      VpcId: "vpc-0a1e6b2ea5bc4ee92"
+      State:
+        Code: "16"
+        Name: "running"
+      NetworkInterfaces:
+      - PrivateIpAddresses:
+        - PrivateIpAddress: "172.31.22.198"
+          Primary: true
+        SecondaryPrivateIpAddressCount: 0
+        DeviceIndex: "0"
+        GroupSet:
+        - Ref: "EC2SecurityGroupFc"
+        Ipv6Addresses: []
+        SubnetId:
+          Ref: "EC2Subnet"
+        AssociatePublicIpAddress: true
+        NetworkInterfaceId:
+          Ref: "EC2NetworkInterface"
+        DeleteOnTermination: true
+      ImageId: "ami-0f9de6e2d2f067fca"
+      InstanceType: "t2.large"
+      Monitoring: false
+      Tags:
+      - Value: "FlaskDevServer"
+        Key: "Name"
+      CreditSpecification:
+        CPUCredits: "standard"
+  EC2SecurityGroupAB:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SecurityGroup"
+    DeletionPolicy: "Retain"
+    Properties:
+      GroupDescription: "For Flask prod Bastion Host"
+      GroupName: "FlaskProdBastionHost"
+      VpcId:
+        Ref: "EC2VPC"
+      SecurityGroupIngress:
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "tcp"
+        FromPort: 80
+        ToPort: 80
+      - IpProtocol: "tcp"
+        FromPort: 22
+        SourceSecurityGroupId: "sg-0bef900fb25f2dadb"
+        ToPort: 22
+        SourceSecurityGroupOwnerId: "339713116745"
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "tcp"
+        FromPort: 443
+        ToPort: 443
+      SecurityGroupEgress:
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: "-1"
+        FromPort: -1
+        ToPort: -1
+      Tags:
+      - Value: "SecureProducEnvi"
+        Key: "Name"
+  EC2InstanceB7:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::Instance"
+    DeletionPolicy: "Retain"
+    Properties:
+      Tenancy: "default"
+      SecurityGroups:
+      - "launch-wizard-1"
+      PrivateIpAddress: "172.31.32.243"
+      InstanceInitiatedShutdownBehavior: "stop"
+      CpuOptions:
+        ThreadsPerCore: 1
+        CoreCount: 2
+      BlockDeviceMappings:
+      - Ebs:
+          SnapshotId: "snap-0706476dde26d8e82"
+          VolumeType: "gp2"
+          Iops: 100
+          VolumeSize: 8
+          Encrypted: false
+          DeleteOnTermination: true
+        DeviceName: "/dev/sda1"
+      AvailabilityZone: "us-east-1d"
+      PrivateDnsNameOptions:
+        EnableResourceNameDnsARecord: true
+        HostnameType: "ip-name"
+        EnableResourceNameDnsAAAARecord: false
+      SubnetId:
+        Ref: "EC2SubnetDv"
+      SecurityGroupIds:
+      - "sg-0c2e93c0e2806f6a3"
+      EbsOptimized: false
+      DisableApiTermination: false
+      KeyName: "vockey"
+      SourceDestCheck: true
+      Volumes:
+      - VolumeId: "vol-04d8edd0e57d1402a"
+        Device: "/dev/sda1"
+      PlacementGroupName: ""
+      VpcId: "vpc-0a1e6b2ea5bc4ee92"
+      State:
+        Code: "16"
+        Name: "running"
+      NetworkInterfaces:
+      - PrivateIpAddresses:
+        - PrivateIpAddress: "172.31.32.243"
+          Primary: true
+        SecondaryPrivateIpAddressCount: 0
+        DeviceIndex: "0"
+        GroupSet:
+        - Ref: "EC2SecurityGroupFc"
+        Ipv6Addresses: []
+        SubnetId:
+          Ref: "EC2SubnetDv"
+        AssociatePublicIpAddress: true
+        NetworkInterfaceId:
+          Ref: "EC2NetworkInterfaceSX"
+        DeleteOnTermination: true
+      ImageId: "ami-0f9de6e2d2f067fca"
+      InstanceType: "t2.large"
+      Monitoring: false
+      Tags:
+      - Value: "IaCScriptTestServer"
+        Key: "Name"
+      CreditSpecification:
+        CPUCredits: "standard"
+  EC2VPC:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::VPC"
+    DeletionPolicy: "Retain"
+    Properties:
+      CidrBlock: "172.31.0.0/16"
+      EnableDnsSupport: true
+      InstanceTenancy: "default"
+      EnableDnsHostnames: true
+      Tags: []
+  EC2KeyPairVockey:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::KeyPair"
+    DeletionPolicy: "Retain"
+    Properties:
+      KeyName: "vockey"
+      KeyType: "rsa"
+      PublicKeyMaterial: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCfb92bSq6W3azoz6xuaxHisHWviyTDCZ/Wcdf2ppGt6NRh3PUeihPXzqdztNhZY59vKtvnjRYMoRg1iXuC2b9CaZMObWOl+VPJ54ZUYh25HAU1D/xdUB+/MeXcpNNiDBvyPkFRfmqoawpoUjuvVP0sqRrPmV2b1eCnrCrF2cV6onQL+X66hhrlBlp0QbLHnj0nuXvxb2nPcl4MlqaDBN9NbncTlfGOKp8pHJ6xsL9HtmKY8S5ZcJbcWb9zSRkNEjledbe/+VUdBE8nOoQLcXjnmiGGaFJi15bsuplDMquX5JZzEujVh5do4hox17XNqOkPTTBN5T0HUehp9TzeMTJH\
+        \ vockey\n"
+      Tags: []
+  DynamoDBTableBorrowReturnRecords:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::DynamoDB::Table"
+    DeletionPolicy: "Retain"
+    Properties:
+      SSESpecification:
+        SSEEnabled: false
+      TableName: "BorrowReturnRecords"
+      AttributeDefinitions:
+      - AttributeType: "S"
+        AttributeName: "record_id"
+      ContributorInsightsSpecification:
+        Enabled: false
+      BillingMode: "PAY_PER_REQUEST"
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+      WarmThroughput:
+        ReadUnitsPerSecond: 12000
+        WriteUnitsPerSecond: 4000
+      KeySchema:
+      - KeyType: "HASH"
+        AttributeName: "record_id"
+      DeletionProtectionEnabled: false
+      TableClass: "STANDARD"
+      Tags: []
+      TimeToLiveSpecification:
+        Enabled: false
+  EC2RouteTable:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::RouteTable"
+    DeletionPolicy: "Retain"
+    Properties:
+      VpcId:
+        Ref: "EC2VPC"
+  EC2SubnetNetworkAclAssociationJW:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    DeletionPolicy: "Retain"
+    Properties:
+      NetworkAclId:
+        Ref: "EC2NetworkAcl"
+      SubnetId:
+        Ref: "EC2SubnetDv"
