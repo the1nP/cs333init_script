@@ -8,10 +8,23 @@ import sys
 # =========================
 # Configurable variables (override with environment variables if needed)
 # =========================
-PROJECT_NAME = os.environ.get("PROJECT_NAME", "cs333_FinalProject")
+
+# GitHub repository URL (configurable)
+DEFAULT_REPO_URL = "https://github.com/the1nP/tonkitlab_borrow.git"
+REPO_URL = os.environ.get("REPO_URL", DEFAULT_REPO_URL)
+
+def _derive_project_name(repo_url: str) -> str:
+    tail = repo_url.rstrip("/").split("/")[-1]
+    if tail.endswith(".git"):
+        tail = tail[:-4]
+    return tail or "cs333_FinalProject"
+
+# Project directory settings
+PROJECT_NAME = os.environ.get("PROJECT_NAME", _derive_project_name(REPO_URL))
 BASE_DIR = os.environ.get("PROJECT_BASE_DIR", "/srv")
 PROJECT_DIR = os.path.join(BASE_DIR, PROJECT_NAME)
 
+# Virtualenv paths
 VENV_DIR = os.path.join(PROJECT_DIR, "venv")
 VENV_PIP = os.path.join(VENV_DIR, "bin", "pip")
 VENV_ACTIVATE = os.path.join(VENV_DIR, "bin", "activate")
@@ -99,10 +112,10 @@ def clone_repository():
             
         # Set proper permissions
         log_message(f"Setting permissions for base directory {BASE_DIR}")
-        subprocess.run(['sudo', 'chown', f'{os.getenv("USER")}:{os.getenv("USER")}', BASE_DIR], check=True)
+        # Prefer SUDO_USER when running with sudo
+        owner = os.getenv("SUDO_USER") or os.getenv("USER") or "ubuntu"
+        subprocess.run(['sudo', 'chown', f'{owner}:{owner}', BASE_DIR], check=True)
         
-        # Clone repository (replace with your actual repository URL)
-        repo_url = "https://github.com/pakin6509681182/cs333_FinalProject.git"
         target_dir = PROJECT_DIR
         if os.path.exists(target_dir):
             log_message(f"Target directory {target_dir} already exists. Removing it.")
@@ -110,8 +123,8 @@ def clone_repository():
         else:
             log_message(f"Target directory {target_dir} does not exist. Proceeding with clone.")
         
-        log_message(f"Cloning repository from {repo_url} to {target_dir}")
-        subprocess.run(['git', 'clone', repo_url, target_dir], check=True)
+        log_message(f"Cloning repository from {REPO_URL} to {target_dir}")
+        subprocess.run(['git', 'clone', REPO_URL, target_dir], check=True)
         
         log_message("Repository cloned successfully")
         return True
