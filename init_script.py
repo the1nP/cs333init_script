@@ -5,6 +5,22 @@ import subprocess
 import logging
 import sys
 
+# =========================
+# Configurable variables (override with environment variables if needed)
+# =========================
+PROJECT_NAME = os.environ.get("PROJECT_NAME", "cs333_FinalProject")
+BASE_DIR = os.environ.get("PROJECT_BASE_DIR", "/srv")
+PROJECT_DIR = os.path.join(BASE_DIR, PROJECT_NAME)
+
+VENV_DIR = os.path.join(PROJECT_DIR, "venv")
+VENV_PIP = os.path.join(VENV_DIR, "bin", "pip")
+VENV_ACTIVATE = os.path.join(VENV_DIR, "bin", "activate")
+GUNICORN_BIN = os.path.join(VENV_DIR, "bin", "gunicorn")
+
+# Domain and app port can be set once here
+DOMAIN_NAME = os.environ.get("DOMAIN_NAME", "2tooltrack.m3chok.com")
+APP_PORT = int(os.environ.get("APP_PORT", "8000"))
+
 # Setup logging to both file and console
 logging.basicConfig(
     level=logging.INFO,
@@ -14,14 +30,14 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout)
     ]
 )
+
 def setup_virtual_environment():
     """Create and activate virtual environment, then install requirements."""
     try:
-        target_dir = "/srv/cs333_FinalProject"
-        
         # Navigate to project directory
-        log_message(f"Changing to project directory: {target_dir}")
-        os.chdir(target_dir)
+        log_message(f"Changing to project directory: {PROJECT_DIR}")
+        os.makedirs(PROJECT_DIR, exist_ok=True)
+        os.chdir(PROJECT_DIR)
         
         # Create virtual environment
         log_message("Creating Python virtual environment")
@@ -30,15 +46,13 @@ def setup_virtual_environment():
         # Install requirements if requirements.txt exists
         if os.path.exists('requirements.txt'):
             log_message("Installing project dependencies from requirements.txt")
-            # Use the venv's pip directly rather than activating the environment
-            subprocess.run(['./venv/bin/pip', 'install', '-r', 'requirements.txt'], check=True)
+            subprocess.run([VENV_PIP, 'install', '-r', 'requirements.txt'], check=True)
             log_message("Project dependencies installed successfully")
         else:
             log_message("No requirements.txt found, skipping dependency installation", logging.WARNING)
         
-        # Create activation instructions
         log_message("Virtual environment setup complete")
-        log_message("To activate the environment, run: source /srv/cs333_FinalProject/venv/bin/activate")
+        log_message(f"To activate the environment, run: source {VENV_ACTIVATE}")
         
         return True
     except subprocess.CalledProcessError as e:
@@ -47,6 +61,7 @@ def setup_virtual_environment():
     except Exception as e:
         log_message(f"Unexpected error while setting up virtual environment: {str(e)}", logging.ERROR)
         return False
+
 def log_message(message, level=logging.INFO):
     """Log message to file and console"""
     if level == logging.INFO:
@@ -62,7 +77,7 @@ def install_prerequisites():
         log_message("Updating package lists")
         subprocess.run(['sudo', 'apt', 'update'], check=True)
         
-        log_message("Installing Python dependencies (python3.12-venv, python3-pip)")
+        log_message("Installing Python dependencies (python3-venv, python3-pip)")
         subprocess.run(['sudo', 'apt', 'install', '-y', 'python3-venv', 'python3-pip'], check=True)
         
         log_message("Python dependencies installed successfully")
@@ -75,20 +90,20 @@ def install_prerequisites():
         return False
 
 def clone_repository():
-    """Clone the application repository into /srv directory."""
+    """Clone the application repository into BASE_DIR directory."""
     try:
-        # Create the directory if it doesn't exist
-        if not os.path.exists('/srv'):
-            log_message("Creating /srv directory")
-            subprocess.run(['sudo', 'mkdir', '-p', '/srv'], check=True)
+        # Create the base directory if it doesn't exist
+        if not os.path.exists(BASE_DIR):
+            log_message(f"Creating base directory {BASE_DIR}")
+            subprocess.run(['sudo', 'mkdir', '-p', BASE_DIR], check=True)
             
         # Set proper permissions
-        log_message("Setting permissions for /srv directory")
-        subprocess.run(['sudo', 'chown', f'{os.getenv("USER")}:{os.getenv("USER")}', '/srv'], check=True)
+        log_message(f"Setting permissions for base directory {BASE_DIR}")
+        subprocess.run(['sudo', 'chown', f'{os.getenv("USER")}:{os.getenv("USER")}', BASE_DIR], check=True)
         
         # Clone repository (replace with your actual repository URL)
         repo_url = "https://github.com/pakin6509681182/cs333_FinalProject.git"
-        target_dir = "/srv/cs333_FinalProject"
+        target_dir = PROJECT_DIR
         if os.path.exists(target_dir):
             log_message(f"Target directory {target_dir} already exists. Removing it.")
             subprocess.run(['sudo', 'rm', '-rf', target_dir], check=True)
@@ -110,32 +125,28 @@ def clone_repository():
 def setup_apache_reverse_proxy():
     """Configure Apache2 as a reverse proxy for the Tooltrack application"""
     try:
-        # Define domain name at the beginning of the function
-        domain_name = "2tooltrack.m3chok.com"
-        app_port = 8000
-        
         log_message("Installing Apache2 server")
         subprocess.run(['sudo', 'apt', 'install', '-y', 'apache2'], check=True)
         
         log_message("Stopping Tooltrack service temporarily")
         subprocess.run(['sudo', 'systemctl', 'stop', 'tooltrack'], check=True)
         
-        # Create virtual host configuration using the domain_name variable
+        # Create virtual host configuration using DOMAIN_NAME and APP_PORT
         vhost_content = f"""<VirtualHost *:80>
-        ServerName {domain_name}
-        ServerAlias www.{domain_name}
+        ServerName {DOMAIN_NAME}
+        ServerAlias www.{DOMAIN_NAME}
 
-        ProxyPass / http://127.0.0.1:{app_port}/
-        ProxyPassReverse / http://127.0.0.1:{app_port}/
+        ProxyPass / http://127.0.0.1:{APP_PORT}/
+        ProxyPassReverse / http://127.0.0.1:{APP_PORT}/
 
 </VirtualHost>
 
 # vim: syntax=apache ts=4 sw=4 sts=4 sr noet
 """
         apache_conf_dir = "/etc/apache2/sites-available"
-        vhost_file = f"{apache_conf_dir}/{domain_name}.conf"
+        vhost_file = f"{apache_conf_dir}/{DOMAIN_NAME}.conf"
         
-        log_message(f"Configuring Apache2 virtual host for {domain_name}")
+        log_message(f"Configuring Apache2 virtual host for {DOMAIN_NAME}")
         
         # First remove the default SSL configuration if it exists
         subprocess.run(['sudo', 'rm', '-f', f"{apache_conf_dir}/default-ssl.conf"], check=True)
@@ -143,25 +154,22 @@ def setup_apache_reverse_proxy():
         # Rename the default configuration
         if os.path.exists(f"{apache_conf_dir}/000-default.conf"):
             log_message("Removing default Apache2 configuration")
-            subprocess.run(['sudo', 'mv', f"{apache_conf_dir}/000-default.conf", 
-                           vhost_file], check=True)
+            subprocess.run(['sudo', 'mv', f"{apache_conf_dir}/000-default.conf", vhost_file], check=True)
         
-        # Write our new configuration - use domain_name for the temp file name too
-        with open(f"/tmp/{domain_name}.conf", "w") as temp_file:
+        # Write our new configuration - use DOMAIN_NAME for the temp file name too
+        with open(f"/tmp/{DOMAIN_NAME}.conf", "w") as temp_file:
             temp_file.write(vhost_content)
-            
-        subprocess.run(['sudo', 'cp', f'/tmp/{domain_name}.conf', vhost_file], check=True)
+        subprocess.run(['sudo', 'cp', f'/tmp/{DOMAIN_NAME}.conf', vhost_file], check=True)
         
         log_message("Enabling required Apache2 modules")
         subprocess.run(['sudo', 'a2enmod', 'proxy', 'proxy_http'], check=True)
         
         log_message("Disabling default site and enabling Tooltrack site")
         try:
-            # Try to disable the default site, but continue if it doesn't exist
             subprocess.run(['sudo', 'a2dissite', '000-default.conf'], check=True, stderr=subprocess.PIPE)
-        except subprocess.CalledProcessError as e:
-            log_message("Default site 000-default.conf does not exist, continuing anyway", logging.WARNING)        
-        subprocess.run(['sudo', 'a2ensite', f'{domain_name}.conf'], check=True)
+        except subprocess.CalledProcessError:
+            log_message("Default site 000-default.conf does not exist, continuing anyway", logging.WARNING)
+        subprocess.run(['sudo', 'a2ensite', f'{DOMAIN_NAME}.conf'], check=True)
         
         log_message("Reloading Apache2 configuration")
         subprocess.run(['sudo', 'systemctl', 'reload', 'apache2'], check=True)
@@ -170,7 +178,7 @@ def setup_apache_reverse_proxy():
         subprocess.run(['sudo', 'systemctl', 'start', 'tooltrack'], check=True)
         
         log_message("Apache2 reverse proxy setup complete")
-        log_message(f"Tooltrack is now accessible at http://{domain_name}")
+        log_message(f"Tooltrack is now accessible at http://{DOMAIN_NAME}")
         return True
     except subprocess.CalledProcessError as e:
         log_message(f"Failed to set up Apache2 reverse proxy: {str(e)}", logging.ERROR)
@@ -178,16 +186,17 @@ def setup_apache_reverse_proxy():
     except Exception as e:
         log_message(f"Unexpected error while setting up Apache2 reverse proxy: {str(e)}", logging.ERROR)
         return False
+
 def setup_background_service():
     """Configure and start the Tooltrack web server as a background service"""
     try:
         service_file_path = "/etc/systemd/system/tooltrack.service"
-        service_content = """[Unit]
+        service_content = f"""[Unit]
 Description=Tooltrack Web Server
 
 [Service]
-ExecStart=/srv/cs333_FinalProject/venv/bin/gunicorn app:app -w 4 -b 127.0.0.1:8000
-WorkingDirectory=/srv/cs333_FinalProject/
+ExecStart={GUNICORN_BIN} app:app -w 4 -b 127.0.0.1:{APP_PORT}
+WorkingDirectory={PROJECT_DIR}
 Restart=on-failure
 User=ubuntu
 Group=ubuntu
@@ -197,11 +206,9 @@ WantedBy=multi-user.target
 """
         
         log_message("Creating systemd service file for Tooltrack")
-        # Write service content to a temporary file
         with open("/tmp/tooltrack.service", "w") as temp_file:
             temp_file.write(service_content)
         
-        # Copy temporary file to systemd directory
         subprocess.run(['sudo', 'cp', '/tmp/tooltrack.service', service_file_path], check=True)
         
         log_message("Reloading systemd daemon")
@@ -210,7 +217,6 @@ WantedBy=multi-user.target
         log_message("Starting Tooltrack service")
         subprocess.run(['sudo', 'systemctl', 'start', 'tooltrack'], check=True)
         
-        # Enable service to start on boot
         log_message("Enabling Tooltrack service to start on boot")
         subprocess.run(['sudo', 'systemctl', 'enable', 'tooltrack'], check=True)
         
@@ -223,12 +229,10 @@ WantedBy=multi-user.target
     except Exception as e:
         log_message(f"Unexpected error while setting up Tooltrack service: {str(e)}", logging.ERROR)
         return False
+
 def setup_ssl_certificates():
     """Install Certbot and configure SSL certificates for the domain"""
     try:
-        # Get domain name from apache setup to be consistent
-        domain_name = "2tooltrack.m3chok.com"
-        
         log_message("Installing Certbot via snap")
         subprocess.run(['sudo', 'snap', 'install', '--classic', 'certbot'], check=True)
         
@@ -251,30 +255,25 @@ expect "Select the appropriate number"
 send "\\r"
 expect eof
 """
-        
         with open("/tmp/certbot_expect.exp", "w") as f:
             f.write(expect_script)
         
-        # Make the expect script executable
         subprocess.run(['chmod', '+x', '/tmp/certbot_expect.exp'], check=True)
-        
-        # Install expect if not already installed
         subprocess.run(['sudo', 'apt', 'install', '-y', 'expect'], check=True)
         
-        # Run the expect script
         log_message("Running Certbot to obtain SSL certificates")
         subprocess.run(['/tmp/certbot_expect.exp'], check=True, stderr=subprocess.DEVNULL)
         
         log_message("SSL certificates successfully obtained and configured")
-        log_message(f"Website is now accessible via HTTPS: https://{domain_name}")
+        log_message(f"Website is now accessible via HTTPS: https://{DOMAIN_NAME}")
         return True
-        
     except subprocess.CalledProcessError as e:
         log_message(f"Failed to set up SSL certificates: {str(e)}", logging.ERROR)
         return False
     except Exception as e:
         log_message(f"Unexpected error while setting up SSL certificates: {str(e)}", logging.ERROR)
         return False
+
 if __name__ == "__main__":
     print("=" * 60)
     log_message("Starting initialization process for the web application")
@@ -309,18 +308,15 @@ if __name__ == "__main__":
     if not apache_success:
         log_message("Failed to set up Apache2 reverse proxy. Exiting.", logging.ERROR)
         sys.exit(1)
-    # Use the same domain name as in the setup_apache_reverse_proxy function
-    domain_name = "2tooltrack.m3chok.com"  # This should match the one in setup_apache_reverse_proxy
+    
     log_message("Application setup completed successfully")
-    log_message(f"Tooltrack web server is now running and accessible at http://{domain_name}")
+    log_message(f"Tooltrack web server is now running and accessible at http://{DOMAIN_NAME}")
 
-     # Set up SSL certificates with Certbot
+    # Set up SSL certificates with Certbot
     ssl_success = setup_ssl_certificates()
     if not ssl_success:
         log_message("Failed to set up SSL certificates. Exiting.", logging.ERROR)
         sys.exit(1)
     
-    # Use the same domain name as in the setup_apache_reverse_proxy function
-    domain_name = "2tooltrack.m3chok.com"  # This should match the one in setup_apache_reverse_proxy
     log_message("Application setup completed successfully")
-    log_message(f"Tooltrack web server is now running and accessible at https://{domain_name}")
+    log_message(f"Tooltrack web server is now running and accessible at https://{DOMAIN_NAME}")
